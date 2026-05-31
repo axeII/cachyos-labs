@@ -22,6 +22,10 @@ The format is: `YYYY-MM-DD — Brief description`
 - **Created** `~/.local/bin/reset-display.sh` — Forces ultrawide (DP-1, 3840x1600@75) as primary, disables TV (HDMI-A-1)
 - **Created** KDE autostart desktop entry
 
+### 2026-05-31 — Clonky English Locale Fix
+- **Fixed** month/day names showing in Czech by setting `LC_ALL=en_US.UTF-8` in `clonky.service`
+- `LANG=en_US.UTF-8` alone was insufficient because systemd user session had individual `LC_*` vars set to `cs_CZ.UTF-8`
+
 ### 2026-05-30 — Clonky Startup Fix + Weather Disabled
 - **Fixed** `clonky.service` race condition with graphical session (changed `WantedBy` to `graphical-session.target`)
 - **Fixed** `start.sh` exit code propagation so systemd `Restart=on-failure` actually works

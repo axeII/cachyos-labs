@@ -223,6 +223,8 @@ case "$1" in
         log_info "  /etc/lact/config.yaml"
         log_info "  /etc/systemd/system/lactd.service.d/override.conf"
         log_info "  ~/.config/wezterm/wezterm.lua"
+        log_info "  ~/.config/systemd/user/clonky.service"
+        log_info "  ~/.config/clonky/local.conf"
         ;;
     --help|-h)
         usage

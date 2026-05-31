@@ -1,0 +1,14 @@
+[Unit]
+Description=Clonky
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=exec
+ExecStart=/home/ales/.config/clonky/start.sh
+WorkingDirectory=/home/ales/.config/clonky
+Restart=on-failure
+Environment=LC_ALL=en_US.UTF-8
+
+[Install]
+WantedBy=graphical-session.target

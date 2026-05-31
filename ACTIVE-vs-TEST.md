@@ -45,7 +45,7 @@ These configs and scripts are running right now and are considered stable.
 | Item | Status | Path |
 |------|--------|------|
 | WezTerm config | Active | `~/.config/wezterm/wezterm.lua` |
-| Clonky system monitor | Active | `~/.config/clonky/` (weather disabled) |
+| Clonky system monitor | Active | `~/.config/clonky/` (weather disabled, English locale) |
 
 ### Game Tools
 

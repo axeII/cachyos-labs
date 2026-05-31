@@ -134,6 +134,21 @@ lcc.panel = {
 }
 ```
 
+#### 4. English Locale Only
+
+**Problem**: Month and day names displayed in Czech instead of English (system had `LC_TIME=cs_CZ.UTF-8` and other locale variables).
+
+**Solution**: Set `LC_ALL=en_US.UTF-8` in the systemd service:
+
+```ini
+[Service]
+Type=exec
+ExecStart=$HOME/.config/clonky/start.sh
+WorkingDirectory=$HOME/.config/clonky
+Restart=on-failure
+Environment=LC_ALL=en_US.UTF-8
+```
+
 ### Re-enabling Weather
 
 If you want to try re-enabling it later:
@@ -143,6 +158,17 @@ If you want to try re-enabling it later:
 # Uncomment "weather" in the panel list
 # Restart: systemctl --user restart clonky.service
 ```
+
+### Files
+
+Reference configs stored in this repo:
+
+| File | Destination | Purpose |
+|------|-------------|---------|
+| `configs/clonky/clonky.service` | `~/.config/systemd/user/clonky.service` | Systemd user service with graphical session ordering and English locale |
+| `configs/clonky/local.conf` | `~/.config/clonky/local.conf` | Local overrides: weather disabled, panel position, scale |
+
+The `start.sh` fix (exit code propagation) is applied directly to `~/.config/clonky/start.sh` in the clonky repo.
 
 ---
 
