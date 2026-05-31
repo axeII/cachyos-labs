@@ -256,6 +256,79 @@ def detect_game_target_dir(game_root: Path) -> Path:
     return game_root
 
 
+def match_name_score(query: str, candidate: str) -> float:
+    q_norm = normalize_name(query)
+    c_norm = normalize_name(candidate)
+    q_compact = q_norm.replace(" ", "")
+    c_compact = c_norm.replace(" ", "")
+
+    if q_norm == c_norm or q_compact == c_compact:
+        return 1.0
+    if q_norm in c_norm or q_compact in c_compact:
+        return 0.95
+    return SequenceMatcher(None, q_compact, c_compact).ratio()
+
+
+def find_managed_games(games: list, query: str, min_score: float = 0.62) -> list:
+    scored = []
+    for game in games:
+        score = match_name_score(query, game["name"])
+        if score >= min_score:
+            scored.append((score, game))
+    scored.sort(key=lambda item: (-item[0], item[1]["name"].lower()))
+    return [item[1] for item in scored]
+
+
+def has_optiscaler_installed(game: dict) -> bool:
+    game_path = Path(game.get("path", ""))
+    if not game_path.exists():
+        return False
+
+    dll_name = game.get("dll_name", "dxgi.dll")
+    markers = [
+        game_path / dll_name,
+        game_path / "OptiScaler.ini",
+        game_path / "fakenvapi.dll",
+        game_path / "D3D12_Optiscaler",
+    ]
+    return any(marker.exists() for marker in markers)
+
+
+def refresh_managed_paths(games: list) -> list:
+    scanned = scan_installed_games()
+    updated = False
+
+    for game in games:
+        current = Path(game.get("path", ""))
+        if current.exists():
+            continue
+
+        candidates = [
+            s for s in scanned
+            if s.get("platform") == game.get("platform")
+        ]
+        if not candidates:
+            continue
+
+        best = None
+        best_score = 0.0
+        for cand in candidates:
+            score = match_name_score(game["name"], cand["name"])
+            if score > best_score:
+                best_score = score
+                best = cand
+
+        if best and best_score >= 0.85:
+            new_path = detect_game_target_dir(Path(best["path"]))
+            game["path"] = str(new_path)
+            updated = True
+
+    if updated:
+        save_games(games)
+
+    return games
+
+
 def check_github_version() -> tuple[Optional[str], Optional[str]]:
     try:
         import urllib.request
@@ -686,7 +759,6 @@ def cmd_list(args):
     """List all managed games with pretty table."""
     games = load_games()
     compat_cache = load_compat_cache()
-    scan_data = {g["name"].lower(): g for g in load_scan()}
 
     console.print("[bold cyan]OptiScaler Games[/bold cyan]")
     table = Table(box=None, show_header=True, header_style="dim")
@@ -719,8 +791,7 @@ def cmd_list(args):
         else:
             support_icon = "[dim]—[/dim]"
 
-        scan_match = scan_data.get(game["name"].lower())
-        installed_icon = "[green]✓[/green]" if scan_match and scan_match.get("optiscaler_installed") else "[dim]✗[/dim]"
+        installed_icon = "[green]✓[/green]" if has_optiscaler_installed(game) else "[dim]✗[/dim]"
 
         table.add_row(
             str(i),
@@ -893,6 +964,7 @@ def cmd_update(args):
         print("No games managed. Add games first.")
         return 1
 
+    games = refresh_managed_paths(games)
     latest_ver = config.get("latest_version") or config.get("current_version")
 
     if not latest_ver:
@@ -917,9 +989,10 @@ def cmd_update(args):
 
     # Determine which games to update
     if args.name:
-        target_games = [g for g in games if args.name.lower() in g["name"].lower()]
+        target_games = find_managed_games(games, args.name)
         if not target_games:
             print(f"Game '{args.name}' not found in managed games.")
+            print("Run 'optiscaler list' to see tracked game names.")
             return 1
     else:
         # Update all
