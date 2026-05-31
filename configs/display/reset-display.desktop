@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Reset Display
+Comment=Restores ultrawide as primary monitor on startup
+Exec=$HOME/.local/bin/reset-display.sh
+Hidden=false
+X-KDE-autostart=true
+OnlyShowIn=KDE;

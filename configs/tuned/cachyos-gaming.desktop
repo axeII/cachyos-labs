@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=CachyOS Gaming
+Comment=Switch to gaming profile
+Icon=joystick
+Exec=/usr/bin/tuned-adm profile cachyos-gaming && /usr/bin/notify-send -a ProfileManager "🎮 Gaming Mode" "Profile switched to gaming mode"
+Terminal=false
+Categories=Game;System;
+Keywords=tuned;game;performance;profile;
+StartupNotify=false

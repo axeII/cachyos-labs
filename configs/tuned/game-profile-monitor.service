@@ -1,0 +1,14 @@
+[Unit]
+Description=Game Profile Monitor
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 $HOME/.local/bin/game-profile-monitor.py
+Restart=on-failure
+RestartSec=10
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=%t
+
+[Install]
+WantedBy=default.target

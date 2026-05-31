@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=CachyOS Power Saver
+Comment=Switch to power saver profile
+Icon=battery-savings
+Exec=/usr/bin/tuned-adm profile cachyos-powersave && /usr/bin/notify-send -a ProfileManager "🔋 Power Saver" "Profile switched to power saver mode"
+Terminal=false
+Categories=System;
+Keywords=tuned;power;save;profile;
+StartupNotify=false

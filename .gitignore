@@ -1,0 +1,22 @@
+# OS / Editor
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# MkDocs
+site/
+
+# Backups
+*.backup*
+backup/
+
+# User-specific
+*.log
