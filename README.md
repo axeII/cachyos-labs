@@ -12,7 +12,7 @@
 |-----------|---------|
 | **OS** | CachyOS (Arch Linux based) |
 | **Kernel** | 7.0.8-1-cachyos (performance-tuned) |
-| **CPU** | AMD Ryzen 5 5600 (6-Core) |
+| **CPU** | AMD Ryzen 5 5600X (6-Core) |
 | **GPU** | AMD Radeon RX 9070 XT (Navi 48, RDNA 4) |
 | **Mesa** | 26.1.0 |
 | **Display** | Wayland, 3840x1600 Ultrawide (DP-1) + 4K TV (HDMI-A-1) |
