@@ -1,6 +1,6 @@
 # CachyOS Tweaks Documentation
 
-Welcome to the CachyOS Tweaks documentation.
+Welcome to the CachyOS Tweaks documentation. I like to optimize my system to max feel free to use tools I have in this repository same may be useful to you.
 
 ## Quick Start
 
