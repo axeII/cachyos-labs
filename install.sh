@@ -7,6 +7,7 @@
 #        ./install.sh --gaming    # Gaming configs only
 #        ./install.sh --gpu       # GPU tuning only
 #        ./install.sh --desktop   # Desktop configs only
+#        ./install.sh --aur       # AUR security (paru + chroot)
 
 set -euo pipefail
 
@@ -35,10 +36,11 @@ Usage:
   $0 --power     Power management (tuned auto-switcher)
   $0 --display   Display reset on login
   $0 --gaming    Gaming configs (MangoHud, env vars)
-  $0 --gpu       GPU tuning (LACT config)
-  $0 --desktop   Desktop configs (WezTerm, Clonky)
-  $0 --dry-run   Show what would be installed without doing it
-  $0 --help      Show this help
+   $0 --gpu       GPU tuning (LACT config)
+   $0 --desktop   Desktop configs (WezTerm, Clonky)
+   $0 --aur       AUR security (paru + chroot builds)
+   $0 --dry-run   Show what would be installed without doing it
+   $0 --help      Show this help
 
 EOF
 }
@@ -172,12 +174,70 @@ install_desktop() {
     log_info "Restart WezTerm to apply changes."
 }
 
+install_aur_security() {
+    log_info "Setting up AUR security (paru + chroot)..."
+
+    # Install dependencies
+    if command -v sudo &>/dev/null; then
+        sudo pacman -S --needed --noconfirm paru devtools || log_warn "Failed to install paru/devtools"
+    else
+        log_warn "sudo not available. Install manually:"
+        log_warn "  sudo pacman -S --needed paru devtools"
+    fi
+
+    # paru config
+    mkdir -p "$HOME/.config/paru"
+    cat > "$HOME/.config/paru/paru.conf" << 'PARUCONF'
+[options]
+BottomUp
+RemoveMake
+SudoLoop
+CleanAfter
+Devel
+Provides
+CombinedUpgrade
+UseAsk
+Chroot
+BatchInstall
+PARUCONF
+    log_ok "Created: ~/.config/paru/paru.conf"
+
+    # Fish alias
+    if [[ -f "$HOME/.config/fish/config.fish" ]]; then
+        if ! grep -q 'abbr yay paru' "$HOME/.config/fish/config.fish"; then
+            awk '
+                /^abbr htop zenith/ { print $0; print "abbr yay paru"; next }
+                { print }
+            ' "$HOME/.config/fish/config.fish" > "${HOME}/.config/fish/config.fish.tmp"
+            if ! grep -q 'abbr yay paru' "${HOME}/.config/fish/config.fish.tmp"; then
+                echo "abbr yay paru" >> "${HOME}/.config/fish/config.fish.tmp"
+            fi
+            mv "${HOME}/.config/fish/config.fish.tmp" "$HOME/.config/fish/config.fish"
+        fi
+        log_ok "Added fish alias: yay -> paru"
+    fi
+
+    # Bash/Zsh aliases
+    if [[ -f "$HOME/.bashrc" ]] && ! grep -q "alias yay='paru'" "$HOME/.bashrc"; then
+        echo "alias yay='paru'" >> "$HOME/.bashrc"
+        log_ok "Added bash alias: yay -> paru"
+    fi
+    if [[ -f "$HOME/.zshrc" ]] && ! grep -q "alias yay='paru'" "$HOME/.zshrc"; then
+        echo "alias yay='paru'" >> "$HOME/.zshrc"
+        log_ok "Added zsh alias: yay -> paru"
+    fi
+
+    log_ok "AUR security configured."
+    log_info "Test with: paru -Syu"
+}
+
 install_all() {
     install_power
     install_display
     install_gaming
     install_gpu
     install_desktop
+    install_aur_security
 }
 
 # Main
@@ -209,6 +269,9 @@ case "$1" in
     --desktop)
         install_desktop
         ;;
+    --aur)
+        install_aur_security
+        ;;
     --dry-run|--dryrun)
         DRY_RUN=true
         log_info "DRY RUN - Would install to:"
@@ -225,6 +288,8 @@ case "$1" in
         log_info "  ~/.config/wezterm/wezterm.lua"
         log_info "  ~/.config/systemd/user/clonky.service"
         log_info "  ~/.config/clonky/local.conf"
+        log_info "  ~/.config/paru/paru.conf (chroot builds)"
+        log_info "  fish alias: yay -> paru"
         ;;
     --help|-h)
         usage

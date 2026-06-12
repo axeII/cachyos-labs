@@ -40,6 +40,13 @@ These configs and scripts are running right now and are considered stable.
 | Proton GE | Active | Installed via AUR |
 | Steam launch options (FSR4) | Active | Per-game in Steam |
 
+### AUR Security
+
+| Item | Status | Path |
+|------|--------|------|
+| paru chroot builds | Active | `~/.config/paru/paru.conf` |
+| fish alias (yay → paru) | Active | `~/.config/fish/config.fish` |
+
 ### Desktop
 
 | Item | Status | Path |

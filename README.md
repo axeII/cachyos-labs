@@ -17,7 +17,7 @@
 | **Mesa** | 26.1.0 |
 | **Display** | Wayland, 3840x1600 Ultrawide (DP-1) + 4K TV (HDMI-A-1) |
 | **DE** | KDE Plasma |
-| **AUR Helper** | `yay` |
+| **AUR Helper** | `paru` (chroot-isolated builds) |
 
 ---
 
@@ -39,6 +39,7 @@ This repository documents every tweak, script, and configuration change made to 
 | [Gaming](docs/gaming.md) | MangoHud, Proton GE, environment variables, Steam tips |
 | [Game Tools](docs/game-tools.md) | OptiScaler manager for DLSS/FSR across multiple games |
 | [Desktop](docs/desktop.md) | WezTerm, Clonky fixes, notification sounds |
+| [AUR Security](docs/aur-security.md) | Chroot-isolated AUR builds to protect against malicious PKGBUILDs |
 
 ---
 

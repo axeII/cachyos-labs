@@ -6,6 +6,20 @@ The format is: `YYYY-MM-DD — Brief description`
 
 ---
 
+## 2026-06
+
+### 2026-06-12 — AUR Security: Chroot-Isolated Builds
+- **Migrated** from `yay` to `paru` with chroot builds for AUR package isolation
+- **Configured** `paru` with `Chroot`, `CombinedUpgrade`, `CleanAfter` in `~/.config/paru/paru.conf`
+- **Added** fish alias `abbr yay paru` — muscle memory preserved, command expands in-place
+- **Removed** orphaned/unused AUR packages: `accounts-qml-module`, `plasma5-wallpapers-dynamic`
+- **Context:** June 2026 AUR compromise — ~408 packages infected with `npm install atomic-lockfile`
+  in `.install`/`.hook` files. Chroot builds contain these payloads inside the container.
+- **Created** `configs/aur-security/secure-aur.sh` — replicable setup script for other machines
+- **Created** `docs/aur-security.md` — full documentation with threat model and troubleshooting
+
+---
+
 ## 2026-05
 
 ### 2026-05-23 — Auto Game Mode with Tuned Profiles
