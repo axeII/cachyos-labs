@@ -41,6 +41,8 @@ This repository documents every tweak, script, and configuration change made to 
 | [Desktop](docs/desktop.md) | WezTerm, Clonky fixes, notification sounds |
 | [AUR Security](docs/aur-security.md) | Chroot-isolated AUR builds to protect against malicious PKGBUILDs |
 
+> **June 2026:** [~408 AUR packages were compromised](https://www.reddit.com/r/linux/comments/1u3alhe/roughly_400_aur_packages_compromised/) via `npm install atomic-lockfile`. This repo includes a [security setup](docs/aur-security.md) that protects against this attack class.
+
 ---
 
 ## Quick Start
@@ -67,6 +69,7 @@ Check [ACTIVE-vs-TEST.md](ACTIVE-vs-TEST.md) to see what's actively used vs. wha
 ./install.sh --display    # Display reset only
 ./install.sh --gaming     # Gaming configs only
 ./install.sh --gpu        # GPU tuning only
+./install.sh --aur        # AUR security (paru + chroot)
 ```
 
 > **Warning:** Always review scripts before running. Some configs require root (sudo).
@@ -91,6 +94,7 @@ See [ACTIVE-vs-TEST.md](ACTIVE-vs-TEST.md) for a full breakdown.
 - MESA shader cache 12GB
 - WezTerm with Tokyo Night theme
 - Clonky system monitor (with weather disabled)
+- AUR chroot isolation (paru + devtools)
 
 ---
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-In June 2026, approximately **408 AUR packages** were compromised with malicious `.install` and `.hook` files that ran `npm install atomic-lockfile` during package build/installation. The malicious code executed arbitrary JavaScript payloads on the host system.
+In June 2026, approximately [**408 AUR packages were compromised**](https://www.reddit.com/r/linux/comments/1u3alhe/roughly_400_aur_packages_compromised/) with malicious `.install` and `.hook` files that ran `npm install atomic-lockfile` during package build/installation. The malicious code executed arbitrary JavaScript payloads on the host system. Attackers exploited compromised AUR maintainer accounts to inject these payloads across hundreds of packages, including popular ones like `linux-cachyos-native`, `bitcoin-core-git`, and `exodus-wallet-bin`.
 
 The fix: **build all AUR packages in a chroot** using `paru` + `devtools`. In a chroot, malicious install scripts are contained — they run inside an isolated environment and can't touch your host filesystem.
 
@@ -48,6 +48,32 @@ The chroot is created automatically on first use with `mkarchroot` (from `devtoo
 | File | Destination | Purpose |
 |------|-------------|---------|
 | `configs/aur-security/secure-aur.sh` | (run in place) | One-shot setup: install paru + devtools, configure chroot, add aliases |
+
+---
+
+## Checking if You're Affected
+
+Before setting up protection, check if any compromised packages are installed:
+
+```bash
+# Download and run the community audit script
+curl -sL https://gist.githubusercontent.com/Kidev/59bf9f5fb53ab5eee99f19a6a2fc3992/raw/aur_check.sh | bash
+```
+
+This script by [@Kidev](https://gist.github.com/Kidev/59bf9f5fb53ab5eee99f19a6a2fc3992) cross-references your installed packages against the full list of ~446 known compromised packages. It's a read-only check — it doesn't modify anything.
+
+Or as a safer one-liner (no piping to bash):
+
+```bash
+comm -12 <(pacman -Qqm | sort) <(curl -sL https://gist.githubusercontent.com/Kidev/59bf9f5fb53ab5eee99f19a6a2fc3992/raw/aur_check.sh | grep -oP '^\S+' | tail -n +3 | sort)
+```
+
+If any matches appear, **remove those packages immediately**:
+```bash
+sudo pacman -Rns <package-name>
+```
+
+> **Note:** The AUR team has already reset/removed the malicious commits and banned the compromised accounts. Packages installed *before* the attack window are unaffected. The scripts above only check if a compromised version was ever installed.
 
 ---
 

@@ -16,6 +16,7 @@ Welcome to the CachyOS Tweaks documentation. I like to optimize my system to max
 - [Gaming](gaming.md) — MangoHud, Proton, Steam tips
 - [Game Tools](game-tools.md) — OptiScaler manager
 - [Desktop](desktop.md) — WezTerm, Clonky, notifications
+- [AUR Security](aur-security.md) — Chroot-isolated builds (paru + devtools)
 
 ## Reference
 
