@@ -1,6 +1,6 @@
 # CachyOS Tweaks Documentation
 
-Welcome to the CachyOS Tweaks documentation. I like to optimize my system to max feel free to use tools I have in this repository same may be useful to you.
+Welcome to the CachyOS Tweaks documentation. I like to optimize my system to max get as much FPS as possible. For that reason I keep testing and breaking my system. Sometimes I find something useful which I try to ducument here. Hopefully some stuff here can be useful to others. Feel free to use any tools I have in this repository. If you run into any issue please create a github issue thanks. 
 
 ## Quick Start
 
