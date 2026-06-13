@@ -1,5 +1,5 @@
 #!/bin/bash
-# CachyOS Tweaks Installation Script
+# CachyOS Labs Installation Script
 # Usage: ./install.sh [options]
 #        ./install.sh --all       # Install everything
 #        ./install.sh --power     # Power management only
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
-BACKUP_DIR="$HOME/.config/cachyos-tweaks-backup/$(date +%Y%m%d_%H%M%S)"
+BACKUP_DIR="$HOME/.config/cachyos-labs-backup/$(date +%Y%m%d_%H%M%S)"
 DRY_RUN=false
 
 # Colors
@@ -29,7 +29,7 @@ log_err()  { echo -e "${RED}[ERROR]${NC} $1"; }
 
 usage() {
     cat <<EOF
-CachyOS Tweaks Installer
+CachyOS Labs Installer
 
 Usage:
   $0 --all       Install all active tweaks

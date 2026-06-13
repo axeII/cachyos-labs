@@ -267,7 +267,7 @@ When migrating from RX 6800 (RDNA2) to RX 9070 XT (RDNA4):
 For friends who want to replicate this setup without manually editing YAML, use:
 
 ```bash
-curl -O https://raw.githubusercontent.com/<your-username>/cachyos-tweaks/main/configs/gpu/setup-9070xt.sh
+curl -O https://raw.githubusercontent.com/<your-username>/cachyos-labs/main/configs/gpu/setup-9070xt.sh
 chmod +x setup-9070xt.sh
 ./setup-9070xt.sh
 ```

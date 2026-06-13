@@ -1,4 +1,4 @@
-# CachyOS Tweaks & Configuration
+# CachyOS Labs
 
 > A curated collection of tweaks, scripts, and configurations for optimizing CachyOS (Arch-based) on a gaming-focused desktop with AMD hardware.
 
@@ -50,8 +50,8 @@ This repository documents every tweak, script, and configuration change made to 
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/<your-username>/cachyos-tweaks.git
-cd cachyos-tweaks
+git clone https://github.com/<your-username>/cachyos-labs.git
+cd cachyos-labs
 ```
 
 ### 2. Review what you want
@@ -79,14 +79,14 @@ Check [ACTIVE-vs-TEST.md](ACTIVE-vs-TEST.md) to see what's actively used vs. wha
 Share the interactive setup script:
 
 ```bash
-curl -sS https://raw.githubusercontent.com/<your-username>/cachyos-tweaks/main/configs/gpu/setup-9070xt.sh | bash
+curl -sS https://raw.githubusercontent.com/<your-username>/cachyos-labs/main/configs/gpu/setup-9070xt.sh | bash
 ```
 
 This configures LACT with dual profiles (efficient daily + aggressive Forza Horizon 6) with auto-switching.
 
 ### 5. Backup first!
 
-The install script automatically creates backups at `~/.config/cachyos-tweaks-backup/$(date +%Y%m%d_%H%M%S)/`.
+The install script automatically creates backups at `~/.config/cachyos-labs-backup/$(date +%Y%m%d_%H%M%S)/`.
 
 ---
 
@@ -118,7 +118,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a chronological history of all changes.
 
 This repo is configured for **GitHub Pages** using MkDocs. View the live docs at:
 
-`https://<your-username>.github.io/cachyos-tweaks/`
+`https://<your-username>.github.io/cachyos-labs/`
 
 To serve locally:
 
