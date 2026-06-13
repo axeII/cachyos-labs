@@ -34,7 +34,7 @@ This repository documents every tweak, script, and configuration change made to 
 |-------|-------------|
 | [Power Management](docs/power-management.md) | Auto-switching `tuned` profiles (powersave ↔ gaming) with KDE notifications |
 | [Display & Audio](docs/display-audio.md) | Multi-monitor reset script, HDMI audio fix |
-| [GPU Tuning](docs/gpu-tuning.md) | LACT undervolt, fan curves, RDNA 4 specific tweaks |
+| [GPU Tuning](docs/gpu-tuning.md) | LACT undervolt, fan curves, dual profiles (Default + FH6 auto-switch), RDNA 4 tweaks |
 | [CPU & Cooling](docs/cpu-cooling.md) | CoolerControl settings, PBO planning, swap disabled |
 | [Gaming](docs/gaming.md) | MangoHud, Proton GE, environment variables, Steam tips |
 | [Game Tools](docs/game-tools.md) | OptiScaler manager for DLSS/FSR across multiple games |
@@ -74,7 +74,17 @@ Check [ACTIVE-vs-TEST.md](ACTIVE-vs-TEST.md) to see what's actively used vs. wha
 
 > **Warning:** Always review scripts before running. Some configs require root (sudo).
 
-### 4. Backup first!
+### 4. Friends with RX 9070 XT?
+
+Share the interactive setup script:
+
+```bash
+curl -sS https://raw.githubusercontent.com/<your-username>/cachyos-tweaks/main/configs/gpu/setup-9070xt.sh | bash
+```
+
+This configures LACT with dual profiles (efficient daily + aggressive Forza Horizon 6) with auto-switching.
+
+### 5. Backup first!
 
 The install script automatically creates backups at `~/.config/cachyos-tweaks-backup/$(date +%Y%m%d_%H%M%S)/`.
 
@@ -88,7 +98,7 @@ See [ACTIVE-vs-TEST.md](ACTIVE-vs-TEST.md) for a full breakdown.
 
 - Auto game-mode profile switcher (tuned daemon)
 - Display reset on KDE login
-- LACT GPU undervolting (-45mV) + custom fan curve
+- LACT GPU undervolting (dual profile: -30mV default, -55mV FH6 auto-switch) + custom fan curve
 - MangoHud overlay (FPS, frametime, throttling)
 - Proton GE for Steam
 - MESA shader cache 12GB

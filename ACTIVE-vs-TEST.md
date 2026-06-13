@@ -24,12 +24,13 @@ These configs and scripts are running right now and are considered stable.
 
 | Item | Status | Path |
 |------|--------|------|
-| LACT GPU control | Active | `/etc/lact/config.yaml` |
+| LACT GPU control (dual profile) | Active | `/etc/lact/config.yaml` |
 | LACT systemd override (after CoolerControl) | Active | `/etc/systemd/system/lactd.service.d/override.conf` |
-| Custom fan curve (30% min) | Active | LACT config |
-| Undervolt -45mV | Active | LACT config |
-| 270W power cap | Active | LACT config |
+| Custom fan curve (30% min) | Active | LACT config (both profiles) |
+| Default profile -30mV, 317W cap | Active | LACT config |
+| FH6 profile -55mV, 317W cap (auto-switch) | Active | LACT config |
 | Zero RPM disabled | Active | LACT config |
+| Setup script for friends | Available | `configs/gpu/setup-9070xt.sh` |
 
 ### Gaming
 
@@ -71,8 +72,10 @@ These were tried, tested, or temporarily used but are NOT currently active.
 | Item | Status | Notes |
 |------|--------|-------|
 | Undervolt -60mV | Deprecated | Too aggressive, limited boost clocks at 3840x1600 |
-| Undervolt -70mV | Deprecated | Even more aggressive, used temporarily during initial tuning |
-| 258W power cap | Deprecated | Bumped to 270W after analysis showed thermal headroom |
+| Undervolt -70mV | Deprecated | Caused GPU reset / crash in Forza Horizon 6 |
+| Undervolt -45mV | Superseded | Previous daily driver; replaced by dual-profile (-30mV + -55mV FH6) |
+| 258W power cap | Deprecated | Too restrictive, limited boost; bumped to VBIOS default 317W |
+| 262W / 270W power caps | Deprecated | Manual caps removed; 317W VBIOS default is stable with proper undervolt |
 | CoolerControl GPU management | Deprecated | Conflicts with LACT; set to "Unmanaged" |
 
 ### Gaming (Tested)
@@ -117,6 +120,8 @@ These were tried, tested, or temporarily used but are NOT currently active.
 
 - **Why not Anti-Lag?** At 3840x1600 (near-4K ultrawide), the RX 9070 XT is heavily GPU-bound in single-player games. Anti-Lag only reduces input lag when the CPU runs ahead of the GPU (competitive, high-FPS scenarios). For this setup, `PROTON_FSR4_UPGRADE=1` and `game-performance %command%` are far more impactful.
 
-- **Why -45mV undervolt?** Started at -60mV, then -70mV during early tuning. After analyzing LACT CSV stats, found the GPU was only drawing 99-132W of its 260W cap at 70% usage. -45mV provides stability while allowing better boost behavior.
+- **Why dual profiles (-30mV / -55mV)?** After systematic FH6 benchmarking, -30mV was identified as the efficiency sweet spot (252W peak vs 284W stock, -11% power, +60MHz clocks). However, -55mV delivers the peak GPU FPS (120.4) and best 1% lows in FH6. The dual-profile setup with LACT auto-switch gives the best of both worlds: efficiency everywhere, peak performance in FH6. The -70mV used earlier caused a full GPU reset in FH6 after sustained load.
+
+- **Why 317W power cap?** Previous testing used manual caps (258W-270W) but the VBIOS default 317W provides the thermal headroom needed for aggressive undervolts to express their boost potential. The card draws 252-315W depending on the undervolt, and removing the cap improves stability.
 
 - **Why disable CoolerControl for GPU?** Both CoolerControl and LACT tried to control the GPU fan simultaneously. CoolerControl had a bug where it reset zero RPM on every service restart, even when the GPU was set to "Unmanaged". Setting CoolerControl GPU to Unmanaged and letting LACT take full control solved the 0 RPM after reboot issue.
