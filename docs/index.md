@@ -1,15 +1,14 @@
-# CachyOS Labs Documentation
+# CachyOS Tuning
 
-Welcome to the CachyOS Labs. This is where I pretend to be a scientist while breaking my computer in pursuit of the best performance, lowest temperatures, and maximum FPS. Keeping security tight too. 
+This is my personal collection of tweaks, configs, and scripts for tuning CachyOS. It's a hobby — I do this for fun, chasing the best performance, lowest temps, and highest FPS I can squeeze out of my hardware. Keeping security tight too.
 
-This might be overkill for new CachyOS users — I recommend starting with vanilla first. But feel free to give it a try. Seriously though, check out the AUR security section, especially after the incident that happened recently. 
+This might be overkill for new CachyOS users — I recommend starting with vanilla first. But feel free to give it a try. Seriously though, check out the AUR security section, especially after the incident that happened recently.
 
-I like squeezing every last frame out of my system like it's orange. That means constant breaking things, using LLM for reaserch etc. When I find something useful, I try to document it here. Hopefully some of this work can help others too. Feel free to use any tools in this repository.
-
+I like squeezing every last frame out of my system. That means constant breaking, testing trying new stuff. Sometimes when I find something useful, I try to document it here. Hopefully others find it useful too. Feel free to use any tools in this repository.
 
 If you run into any issues, please create a GitHub issue. You can use this [link](https://youtu.be/dQw4w9WgXcQ) to report a problem.
 
-Thank you.
+Thanks.
 
 
 ## Quick Start
