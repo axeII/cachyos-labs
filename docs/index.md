@@ -1,6 +1,12 @@
-# CachyOS Tweaks Documentation
+# CachyOS Labs Documentation
 
-Welcome to the CachyOS Tweaks documentation. I like to optimize my system to max get as much FPS as possible. For that reason I keep testing and breaking my system. Sometimes I find something useful which I try to ducument here. Hopefully some stuff here can be useful to others. Feel free to use any tools I have in this repository. If you run into any issue please create a github issue thanks. 
+Welcome to the CachyOS Labs. This is where I pretend to be a scientist while breaking my computer in pursuit of the best performance, lowest temperatures, and maximum FPS. Keeping security tight too. 
+
+This might be overkill for new CachyOS users — I recommend starting with vanilla first. But feel free to give it a try. Seriously though, check out the AUR security section, especially after the incident that happened recently. 
+
+I like squeezing every last frame out of my system. That means constant tinkering and, inevitably, breaking things. When I stumble on something useful, I try to document it here. Hopefully some of this work can help others too. Feel free to use any tools in this repository. If you run into issues, please create a GitHub issue. Thanks. 
+
+[![CachyOS Labs](/docs/labs-meme.svg)](https://youtu.be/dQw4w9WgXcQ)
 
 ## Quick Start
 

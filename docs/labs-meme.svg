@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
+  <rect width="600" height="400" fill="#1a1a2e" rx="12"/>
+
+  <!-- Lab equipment: beaker -->
+  <rect x="420" y="140" width="35" height="60" rx="3" fill="none" stroke="#00ff88" stroke-width="2"/>
+  <ellipse cx="437" cy="140" rx="17" ry="6" fill="none" stroke="#00ff88" stroke-width="2"/>
+  <rect x="425" y="160" width="25" height="30" rx="1" fill="#00ff88" opacity="0.3"/>
+
+  <!-- Lab equipment: flask -->
+  <ellipse cx="500" cy="195" rx="12" ry="12" fill="none" stroke="#ff6b6b" stroke-width="2"/>
+  <rect x="492" y="140" width="16" height="40" fill="none" stroke="#ff6b6b" stroke-width="2"/>
+  <rect x="498" y="135" width="4" height="10" fill="none" stroke="#ff6b6b" stroke-width="2"/>
+
+  <!-- Computer monitor -->
+  <rect x="80" y="100" width="180" height="130" rx="8" fill="#0d1117" stroke="#e0e0e0" stroke-width="2"/>
+  <rect x="95" y="115" width="150" height="95" rx="3" fill="#161b22"/>
+  <!-- Screen content: terminal with error -->
+  <text x="170" y="135" font-family="monospace" font-size="10" fill="#00ff88" text-anchor="middle">$ optimize.sh</text>
+  <text x="170" y="150" font-family="monospace" font-size="10" fill="#ff6b6b" text-anchor="middle">ERROR: segfault</text>
+  <text x="170" y="165" font-family="monospace" font-size="10" fill="#ff6b6b" text-anchor="middle">core dumped 💀</text>
+  <text x="170" y="185" font-family="monospace" font-size="10" fill="#e0e0e0" text-anchor="middle">$ _</text>
+
+  <!-- Monitor stand -->
+  <rect x="140" y="230" width="60" height="8" rx="2" fill="#888"/>
+  <rect x="160" y="238" width="20" height="25" rx="1" fill="#888"/>
+
+  <!-- Text -->
+  <text x="300" y="310" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#00ff88" text-anchor="middle">CachyOS Labs</text>
+  <text x="300" y="345" font-family="monospace" font-size="14" fill="#e0e0e0" text-anchor="middle">breaking things for science™</text>
+  <text x="300" y="370" font-family="monospace" font-size="12" fill="#888" text-anchor="middle">I have no idea what I'm doing</text>
+
+  <!-- Tiny explosion/danger sign near computer -->
+  <text x="260" y="120" font-size="24" fill="#ff6b6b">⚡</text>
+</svg>
