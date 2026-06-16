@@ -4,7 +4,16 @@
 
 ## Overview
 
-In June 2026, approximately [**408 AUR packages were compromised**](https://www.reddit.com/r/linux/comments/1u3alhe/roughly_400_aur_packages_compromised/) with malicious `.install` and `.hook` files that ran `npm install atomic-lockfile` during package build/installation. The malicious code executed arbitrary JavaScript payloads on the host system. Attackers exploited compromised AUR maintainer accounts to inject these payloads across hundreds of packages, including popular ones like `linux-cachyos-native`, `bitcoin-core-git`, and `exodus-wallet-bin`.
+In June 2026, a massive supply-chain attack ("Atomic Arch") compromised the Arch User Repository. Attackers hijacked orphaned packages and injected malicious `.install`/`.hook` files that ran `npm install atomic-lockfile` and `js-digest` during package builds. The [**official Arch list**](https://md.archlinux.org/s/SxbqukK6IA) counts **1,579+ affected packages** (community trackers now list **1,600+** across two attack waves). Popular targets included `linux-cachyos-native`, `bitcoin-core-git`, and `exodus-wallet-bin`. [Phoronix coverage](https://www.phoronix.com/news/Arch-Linux-AUR-More-Than-1500) — [Sonatype analysis (Atomic Arch)](https://www.sonatype.com/blog/atomic-arch-npm-campaign-adds-malicious-dependency) — [PrivacyGuides](https://www.privacyguides.org/news/2026/06/12/around-1-500-aur-packages-compromised-with-rootkit-like-malware/) — [Reddit discussion](https://www.reddit.com/r/linux/comments/1u3alhe/roughly_400_aur_packages_compromised/).
+
+**Payload**: multi-stage infostealer + rootkit that exfiltrated:
+- Browser profiles (Chromium + Firefox saved passwords, cookies, autofill)
+- SSH private keys
+- Environment variables (API tokens, cloud credentials)
+- Cryptocurrency wallet files and seed phrases
+- GitHub tokens
+
+Arch declared "all's clear" on June 13 after scrubbing all malicious commits and banning compromised accounts.
 
 The fix: **build all AUR packages in a chroot** using `paru` + `devtools`. In a chroot, malicious install scripts are contained — they run inside an isolated environment and can't touch your host filesystem.
 
@@ -15,7 +24,7 @@ The fix: **build all AUR packages in a chroot** using `paru` + `devtools`. In a 
 | **Chroot builds** (`paru --chroot`) | Every AUR build runs in a clean container. `.install` scripts and `npm install` can't escape. |
 | **Diff review** (`paru` default) | paru shows PKGBUILD diffs before building. You'd spot `npm install atomic-lockfile` immediately. |
 | **Chaotic-aur** (repo priority) | Chaotic-aur vets packages before publishing. When a package exists in both chaotic-aur and AUR, pacman prefers chaotic-aur. |
-| **No npm dependency** | The attack vector was `npm install atomic-lockfile`. Avoid installing npm globally unless needed. |
+| **No npm dependency** | The attack vector was `npm install atomic-lockfile` + `js-digest`. Avoid installing npm globally unless needed. |
 
 ---
 
@@ -27,7 +36,7 @@ Before (vulnerable):
   → Downloads PKGBUILD from AUR
   → Runs makepkg ON YOUR HOST
   → Malicious .install script runs npm install atomic-lockfile
-  → Payload executes on your system  <-- DANGER
+  → Infostealer executes, exfiltrates credentials  <-- DANGER
 
 After (protected):
   paru -S some-pkg
@@ -43,29 +52,29 @@ The chroot is created automatically on first use with `mkarchroot` (from `devtoo
 
 ---
 
-## Files
-
-| File | Destination | Purpose |
-|------|-------------|---------|
-| `configs/aur-security/secure-aur.sh` | (run in place) | One-shot setup: install paru + devtools, configure chroot, add aliases |
-
----
-
 ## Checking if You're Affected
 
-Before setting up protection, check if any compromised packages are installed:
+Run the audit to check your system:
 
 ```bash
-# Download and run the community audit script
+./configs/aur-security/secure-aur.sh --audit
+```
+
+Or check manually with the community script:
+
+```bash
+# Kidev's audit script (read-only)
 curl -sL https://gist.githubusercontent.com/Kidev/59bf9f5fb53ab5eee99f19a6a2fc3992/raw/aur_check.sh | bash
 ```
 
-This script by [@Kidev](https://gist.github.com/Kidev/59bf9f5fb53ab5eee99f19a6a2fc3992) cross-references your installed packages against the full list of ~446 known compromised packages. It's a read-only check — it doesn't modify anything.
-
-Or as a safer one-liner (no piping to bash):
+Safer one-liner (no piping to bash, for fish users run in bash first):
 
 ```bash
-comm -12 <(pacman -Qqm | sort) <(curl -sL https://gist.githubusercontent.com/Kidev/59bf9f5fb53ab5eee99f19a6a2fc3992/raw/aur_check.sh | grep -oP '^\S+' | tail -n +3 | sort)
+# Check against official Arch list (~1,579 packages)
+comm -12 <(pacman -Qqm | sort) <(curl -sL https://md.archlinux.org/s/SxbqukK6IA/download | sort)
+
+# Also check against community-maintained list (~1,600+ packages, pinned to commit hash)
+comm -12 <(pacman -Qqm | sort) <(curl --proto '=https' --tlsv1.3 -sL https://raw.githubusercontent.com/lenucksi/aur-malware-check/3010670b9cad0146cf6e58db28cd17779535d35f/package_list.txt | sort)
 ```
 
 If any matches appear, **remove those packages immediately**:
@@ -73,7 +82,38 @@ If any matches appear, **remove those packages immediately**:
 sudo pacman -Rns <package-name>
 ```
 
-> **Note:** The AUR team has already reset/removed the malicious commits and banned the compromised accounts. Packages installed *before* the attack window are unaffected. The scripts above only check if a compromised version was ever installed.
+Also check for npm artifacts left in `/tmp`:
+```bash
+find /tmp -maxdepth 3 \( -name 'atomic-lockfile' -o -name 'js-digest' -o -name 'node_modules' \) -type d
+```
+
+> **Note:** The AUR team has reset/removed all malicious commits and banned the compromised accounts as of June 13, 2026. Packages installed *before* or *after* the attack window (June 5-11) are unaffected.
+
+---
+
+## Files
+
+| File | Destination | Purpose |
+|------|-------------|---------|
+| `configs/aur-security/secure-aur.sh` | (run in place) | Setup + audit: install paru/devtools, configure chroot, add aliases, scan for compromises |
+| `configs/aur-security/check-aur-malware.sh` | (run in place) | Lightweight scan: cross-reference installed AUR packages against community-maintained known-malware list |
+
+### Script Commands
+
+| Flag | What It Does |
+|---|---|
+| (no args) | Full setup: install paru + devtools, configure chroot, add shell aliases |
+| `--audit` | Scan system: cross-reference AUR packages against 1,600+ compromised list (official + community lists), check /tmp for npm artifacts, check pacman logs |
+| `--verify` | Check that chroot + aliases are properly configured |
+| `--fish-only` | Only add fish alias (yay → paru) |
+
+### Standalone Malware Check
+
+A minimal single-purpose script that checks against the community-maintained [lenucksi/aur-malware-check](https://github.com/lenucksi/aur-malware-check) list:
+
+```bash
+./configs/aur-security/check-aur-malware.sh
+```
 
 ---
 
@@ -82,7 +122,6 @@ sudo pacman -Rns <package-name>
 ### Quick Setup
 
 ```bash
-# Run the setup script
 chmod +x configs/aur-security/secure-aur.sh
 ./configs/aur-security/secure-aur.sh
 ```
@@ -90,12 +129,10 @@ chmod +x configs/aur-security/secure-aur.sh
 The script does:
 1. Installs `paru` and `devtools` (if not already installed)
 2. Creates `~/.config/paru/paru.conf` with `Chroot` enabled
-3. Adds `abbr yay paru` to fish shell config (muscle memory preserved)
+3. Adds `abbr yay paru` to fish shell config
 4. Optionally adds `alias yay='paru'` to bash/zsh
 
 ### Manual Setup
-
-If you prefer to do it yourself:
 
 ```bash
 # 1. Install dependencies
@@ -121,25 +158,6 @@ EOF
 echo 'abbr yay paru' >> ~/.config/fish/config.fish
 ```
 
-### Verify Setup
-
-```bash
-./configs/aur-security/secure-aur.sh --verify
-```
-
-Or check manually:
-
-```bash
-# Check paru version
-paru -V
-
-# Check chroot is configured
-grep Chroot ~/.config/paru/paru.conf
-
-# Check fish alias
-grep 'abbr yay' ~/.config/fish/config.fish
-```
-
 ---
 
 ## Daily Usage
@@ -157,11 +175,11 @@ paru -S <package>
 # Skip chroot for a single build (if needed)
 paru --nochroot <package>
 
-# Clean build artifacts
-paru -Sc
+# Audit your system periodically
+./configs/aur-security/secure-aur.sh --audit
 ```
 
-The first time you build an AUR package, paru will create the chroot. This takes a few minutes as it downloads a minimal Arch base. Subsequent builds are fast (they re-use the chroot).
+The first AUR build creates the chroot (~200MB download). Subsequent builds are fast.
 
 ---
 
@@ -169,15 +187,15 @@ The first time you build an AUR package, paru will create the chroot. This takes
 
 ### Fish Shell
 
-The setup script adds `abbr yay paru` to `~/.config/fish/config.fish`. An `abbr` (abbreviation) expands in-place — typing `yay` and pressing Space/Enter turns it into `paru` on the command line. Your muscle memory works, but you always see the real command.
+The script adds `abbr yay paru` to `~/.config/fish/config.fish`. An `abbr` (abbreviation) expands in-place — typing `yay` and pressing Space/Enter turns it into `paru`. Muscle memory preserved, real command always visible.
 
 ### Bash / Zsh
 
-The script optionally adds `alias yay='paru'` to `~/.bashrc` and `~/.zshrc`. These are standard shell aliases.
+The script optionally adds `alias yay='paru'` to `~/.bashrc` and `~/.zshrc`.
 
 ### Chaotic-aur
 
-If you use [chaotic-aur](https://aur.chaotic.cx/), it's kept as a pacman repository (not an AUR build source). Chaotic-aur vets packages before publishing, providing an additional protection layer. When a package exists in both chaotic-aur and AUR, pacman prefers chaotic-aur due to repository priority order in `/etc/pacman.conf`.
+If you use [chaotic-aur](https://aur.chaotic.cx/), it's kept as a pacman repository. Chaotic-aur vets packages before publishing. When a package exists in both chaotic-aur and AUR, pacman prefers chaotic-aur due to repository priority in `/etc/pacman.conf`.
 
 ---
 
@@ -185,7 +203,7 @@ If you use [chaotic-aur](https://aur.chaotic.cx/), it's kept as a pacman reposit
 
 ### "unknown option 'Chroot'" error
 
-Make sure `devtools` is installed:
+`devtools` is not installed:
 ```bash
 sudo pacman -S devtools
 ```
@@ -200,19 +218,11 @@ sudo pacman-key --populate archlinux
 
 ### Chroot creation takes too long
 
-The first chroot build downloads ~200MB of base packages. This is normal. Use `paru --nochroot` for urgent single packages, but re-enable chroot for regular use.
+First build downloads ~200MB of base packages. Normal. Use `paru --nochroot` for urgent single packages, re-enable chroot after.
 
 ### npm/node installed on host
 
-The chroot protects against `npm install` payloads even if npm is installed on your host. However, if you don't develop with Node.js, removing it closes that attack surface entirely:
+Chroot protects against `npm install` payloads even if npm is installed on your host. However, if you don't develop with Node.js, removing it closes that attack surface entirely:
 ```bash
 pacman -Rns npm nodejs
 ```
-
-### Removing yay (optional)
-
-Once you're comfortable with paru, you can remove yay:
-```bash
-sudo pacman -Rns yay
-```
-paru is a drop-in replacement with the same CLI and flags.
