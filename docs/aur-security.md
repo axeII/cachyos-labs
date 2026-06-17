@@ -226,7 +226,7 @@ journalctl -b --no-pager | grep -i 'atomicarch\|c2\.' || echo "No DNS hits"
 
 | File | Destination | Purpose |
 |------|-------------|---------|
-| `configs/aur-security/secure-aur.sh` | (run in place) | Full setup: install paru/devtools, configure chroot + LocalRepo, add fish aliases (`paru`→`--repo`, `paur`→AUR), deploy pacman hook + firejail profiles |
+| `configs/aur-security/secure-aur.sh` | (run in place) | Full setup: install paru/devtools, configure chroot + LocalRepo, add fish/bash/zsh functions (`paru`→safe repo-only, `paur`→AUR), remove yay binary, deploy pacman hook + firejail profiles |
 | `configs/aur-security/check-aur-malware.sh` | (run in place) | Lightweight scan: cross-reference installed AUR packages against community-maintained known-malware list |
 | `configs/aur-security/test-chroot-isolation.sh` | (run in place) | Build a fake malicious PKGBUILD with and without chroot to verify containment |
 | `configs/aur-security/aur-malware-check.sh` | `/usr/local/bin/aur-malware-check.sh` | Post-transaction hook script: checks packages against official + community compromised lists |
@@ -242,7 +242,7 @@ journalctl -b --no-pager | grep -i 'atomicarch\|c2\.' || echo "No DNS hits"
 | (no args) | Full setup: install paru + devtools, configure chroot + LocalRepo, add fish aliases (`paru`→`--repo`, `paur`→AUR), deploy pacman hook + firejail profiles |
 | `--audit` | Scan system: cross-reference AUR packages against 1,600+ compromised list (official + community lists), check /tmp for npm artifacts, check pacman logs |
 | `--verify` | Check that chroot, LocalRepo, aliases, hook, and firejail are properly configured |
-| `--fish-only` | Only add fish abbreviations (`paru`→`paru --repo`, `paur`→`paru`) |
+| `--fish-only` | Only add fish functions: `paru` (→`paru --repo`, safe) + `paur` (→`paru`, AUR) |
 
 ### Standalone Malware Check
 

@@ -1,12 +1,19 @@
 #!/bin/bash
 # CachyOS AUR Security Setup
-# Configures paru with chroot builds to protect against malicious PKGBUILDs.
+# Three-layer defense against malicious PKGBUILDs (Atomic Arch, June 2026):
+#   Layer 1: Chaotic-AUR (prevent) — reviewed packages, no direct AUR
+#   Layer 2: Chroot builds (contain) — systemd-nspawn isolation
+#   Layer 3: Firejail + pacman hook + snapper (detect & recover)
 #
 # What this does:
 #   - Installs paru and devtools (makepkg chroot support)
-#   - Creates paru config with Chroot enabled
-#   - Adds fish shell alias: yay -> paru
-#   - Optionally adds bash/zsh aliases
+#   - Creates paru config with Chroot + LocalRepo enabled
+#   - Creates local repo at /var/lib/aurbuild/repo/ for chroot-built packages
+#   - Adds fish functions: paru -> 'paru --repo' (safe), paur -> 'paru' (AUR)
+#   - Adds bash/zsh functions with same pattern
+#   - Removes yay binary to prevent accidental AUR access
+#   - Installs firejail with profiles for remaining AUR packages
+#   - Deploys pacman post-transaction hook (compromised-package check)
 #
 # Why:
 #   June 2026: 1,600+ AUR packages compromised via "Atomic Arch" supply-chain
@@ -32,11 +39,12 @@ log_err()  { echo -e "${RED}[ERROR]${NC} $1"; }
 
 usage() {
     cat <<EOF
-AUR Security Setup — Protect against malicious AUR packages
+AUR Security Setup — Three-layer defense against malicious AUR packages
 
 Usage:
-  $0                  Install paru + chroot and configure shell aliases
-  $0 --fish-only      Only add fish alias (yay -> paru)
+  $0                  Full setup: paru + chroot + LocalRepo + fish aliases
+                      + firejail + pacman hook
+  $0 --fish-only      Add fish functions (paru -> repo-safe, paur -> AUR)
   $0 --verify         Check current AUR security status
   $0 --audit          Cross-reference installed AUR packages against the
                       official 1,600+ known-compromised package list
@@ -50,9 +58,12 @@ Context:
   profiles, SSH keys, env vars, crypto wallets, and GitHub tokens.
 
 What this configures:
-  - paru AUR helper with chroot isolation for builds
-  - fish shell alias: yay -> paru
-  - (Optional) bash/zsh aliases
+  Layer 1 — Chaotic-AUR: migrate from direct AUR to reviewed packages
+  Layer 2 — Chroot builds: paru + devtools, systemd-nspawn containers
+  Layer 3 — Firejail + pacman hook + snapper: detect & recover
+  Shell:   paru -> paru --repo (safe, repos only)
+           paur -> paru        (explicit AUR access with chroot)
+  Hook:    Post-transaction cross-reference against compromised lists
 
 EOF
 }
@@ -147,9 +158,33 @@ verify_setup() {
         ok=false
     fi
 
-    if [[ -f "$HOME/.config/fish/config.fish" ]] && grep -q 'abbr yay paru' "$HOME/.config/fish/config.fish"; then
-        log_ok "fish alias: yay -> paru"
+    if grep -q '^LocalRepo' "$HOME/.config/paru/paru.conf" 2>/dev/null; then
+        log_ok "paru LocalRepo configured"
+    else
+        log_warn "paru LocalRepo not set (chroot builds may not work)"
     fi
+
+    if [[ -f "$HOME/.config/fish/config.fish" ]] && grep -q 'function paru' "$HOME/.config/fish/config.fish"; then
+        log_ok "fish function: paru -> paru --repo (safe mode)"
+    else
+        log_warn "fish paru function not found"
+    fi
+
+    if [[ -f "$HOME/.config/fish/config.fish" ]] && grep -q 'function paur' "$HOME/.config/fish/config.fish"; then
+        log_ok "fish function: paur -> paru (AUR access)"
+    else
+        log_warn "fish paur function not found"
+    fi
+
+    if [[ -x /usr/local/bin/aur-malware-check.sh ]]; then
+        log_ok "AUR malware check hook installed"
+    else
+        log_warn "AUR malware check hook not found"
+    fi
+
+    local rpm
+    rpm=$(pacman -Qqm 2>/dev/null | wc -l)
+    log_info "Foreign packages: $rpm (should be 3 for hardened setup)"
 
     if $ok; then
         log_ok "AUR security setup looks good."
@@ -201,39 +236,86 @@ PARUCONF
     log_info "Key: LocalRepo + Chroot (isolated builds), PgpFetch, CleanAfter"
 }
 
-add_fish_alias() {
+add_fish_aliases() {
     local fish_config="$HOME/.config/fish/config.fish"
 
     if [[ ! -f "$fish_config" ]]; then
-        log_warn "Fish config not found. Add manually: echo 'abbr yay paru' >> ~/.config/fish/config.fish"
+        log_warn "Fish config not found. Create one, or add functions manually:"
+        log_warn "  function paru; if test (count \$argv) -eq 0; command paru --repo -Syu; else; command paru --repo \$argv; end; end"
+        log_warn "  function paur; command paru \$argv; end"
         return 0
     fi
 
+    # Remove old-style abbr if present
     if grep -q 'abbr yay paru' "$fish_config"; then
-        log_ok "fish alias 'yay -> paru' already exists"
-        return 0
+        sed -i '/abbr yay paru/d' "$fish_config"
+        log_info "Removed old yay abbr (replaced by paru/paur functions)"
     fi
 
-    awk '/^abbr htop zenith/ { print $0; print "abbr yay paru"; next } { print }' "$fish_config" > "${fish_config}.tmp"
-    if ! grep -q 'abbr yay paru' "${fish_config}.tmp"; then
-        echo "abbr yay paru" >> "${fish_config}.tmp"
+    # Add paru function (repo-safe mode with default -Syu)
+    if grep -q 'function paru' "$fish_config"; then
+        log_ok "fish function 'paru' already exists"
+    else
+        cat >> "$fish_config" << 'FISH'
+
+# AUR is DISABLED by default after Atomic Arch incident (June 2026).
+# `paru` defaults to repo-only mode (uses --repo flag internally).
+# Use `paur` for explicit AUR access on remaining AUR-only packages.
+function paru
+    if test (count $argv) -eq 0
+        command paru --repo -Syu
+    else
+        command paru --repo $argv
+    end
+end
+
+function paur
+    command paru $argv
+end
+FISH
+        log_ok "Added fish functions: paru (repo-safe), paur (AUR access)"
     fi
-    mv "${fish_config}.tmp" "$fish_config"
-    log_ok "Added fish alias: yay -> paru"
 }
 
 add_posix_aliases() {
+    local block
+    read -r -d '' block << 'FUNCS' || true
+# AUR-safe aliases (Atomic Arch defense)
+paru() {
+    if [ $# -eq 0 ]; then
+        command paru --repo -Syu
+    else
+        command paru --repo "$@"
+    fi
+}
+paur() {
+    command paru "$@"
+}
+FUNCS
+
     local added=false
-    if [[ -f "$HOME/.bashrc" ]] && ! grep -q "alias yay='paru'" "$HOME/.bashrc"; then
-        echo "alias yay='paru'" >> "$HOME/.bashrc"
-        log_ok "Added bash alias: yay -> paru"; added=true
-    fi
-    if [[ -f "$HOME/.zshrc" ]] && ! grep -q "alias yay='paru'" "$HOME/.zshrc"; then
-        echo "alias yay='paru'" >> "$HOME/.zshrc"
-        log_ok "Added zsh alias: yay -> paru"; added=true
-    fi
+    for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+        if [[ -f "$rc" ]] && ! grep -q "paru()" "$rc" 2>/dev/null; then
+            # Remove old yay alias if present
+            sed -i '/alias yay/d' "$rc" 2>/dev/null || true
+            echo "" >> "$rc"
+            echo "$block" >> "$rc"
+            log_ok "Added paru/paur functions to $rc"
+            added=true
+        fi
+    done
     if ! $added; then
-        log_info "No bash/zsh configs found. Skipping."
+        log_info "No bash/zsh configs found (or already present). Skipping."
+    fi
+}
+
+remove_yay() {
+    if pacman -Q yay &>/dev/null; then
+        log_info "Removing yay binary to prevent accidental AUR access..."
+        sudo pacman -R --noconfirm yay 2>/dev/null || true
+        log_ok "yay removed"
+    else
+        log_ok "yay not installed (good)"
     fi
 }
 
@@ -246,6 +328,13 @@ setup_local_repo() {
     if [[ ! -f /var/lib/aurbuild/repo/aurbuild.db.tar.gz ]]; then
         sudo sh -c 'cd /var/lib/aurbuild/repo && tar czf aurbuild.db.tar.gz -T /dev/null && ln -sf aurbuild.db.tar.gz aurbuild.db'
     fi
+    # Clean any leftover test packages from the repo database
+    for leftover in aur-chroot-test aur-chroot-test-build; do
+        if tar -tzf /var/lib/aurbuild/repo/aurbuild.db.tar.gz 2>/dev/null | grep -q "$leftover"; then
+            sudo repo-remove /var/lib/aurbuild/repo/aurbuild.db.tar.gz "$leftover" 2>/dev/null || true
+            log_info "Cleaned leftover test package: $leftover"
+        fi
+    done
     sudo chown -R "$USER:$USER" /var/lib/aurbuild 2>/dev/null || true
     sudo pacman -Sy --noconfirm 2>&1 | tail -1 || true
     log_ok "Local repo 'aurbuild' configured"
@@ -255,8 +344,25 @@ install_firejail() {
     log_info "Installing firejail sandbox..."
     if ! command -v firejail &>/dev/null; then
         sudo pacman -S --needed --noconfirm firejail
+        log_ok "firejail installed"
+    else
+        log_ok "firejail already installed"
     fi
-    log_ok "firejail installed"
+
+    # Deploy firejail profiles for remaining AUR packages
+    local script_dir
+    script_dir="$(cd "$(dirname "$0")" && pwd)"
+    local profiles=("upscayl-bin.local" "quadcastrgb.local" "littlesnitch-bin.local")
+
+    for profile in "${profiles[@]}"; do
+        local src="$script_dir/$profile"
+        if [[ -f "$src" ]] && [[ ! -f "/etc/firejail/$profile" ]]; then
+            sudo cp "$src" "/etc/firejail/$profile"
+            log_ok "Deployed firejail profile: $profile"
+        elif [[ -f "/etc/firejail/$profile" ]]; then
+            log_ok "firejail profile already exists: $profile"
+        fi
+    done
 }
 
 setup_pacman_hook() {
@@ -298,24 +404,30 @@ HOOK
 main_install() {
     echo ""
     log_info "=== CachyOS AUR Security Setup ==="
-    log_info "Protects against supply-chain attacks like the June 2026"
-    log_info "\"Atomic Arch\" compromise (1,600+ packages)."
-    log_info "Chroot builds run in a container — malware can't escape to host."
+    log_info "Three-layer defense against supply-chain attacks"
+    log_info "Layer 1: Chaotic-AUR (prevent) — reviewed packages only"
+    log_info "Layer 2: Chroot builds (contain) — systemd-nspawn isolation"
+    log_info "Layer 3: Firejail + hook + snapper (detect & recover)"
     echo ""
 
     install_paru_chroot
     configure_paru
+    remove_yay
     setup_local_repo
     install_firejail
     setup_pacman_hook
-    add_fish_alias
+    add_fish_aliases
     add_posix_aliases
 
     echo ""
     log_ok "Setup complete!"
-    log_info "System: pacman -Syu  (repos + Chaotic-AUR only, no AUR)"
-    log_info "AUR:   paur -S <package>  (uses chroot-isolated build)"
-    log_info "Skip chroot: paur --nochroot <package>"
+    log_info "Daily usage:"
+    log_info "  paru                  — System update (repos only, no AUR)"
+    log_info "  paru -S <pkg>         — Install from repos (safe)"
+    log_info "  paur -S <pkg>         — Install from AUR (chroot-isolated)"
+    log_info "  paur --nochroot <pkg> — Skip chroot (emergency only)"
+    echo ""
+    log_info "Run '$0 --audit' to scan for compromised packages"
     echo ""
 }
 
@@ -323,7 +435,7 @@ case "${1:-}" in
     --help|-h) usage; exit 0 ;;
     --verify)  verify_setup; exit 0 ;;
     --audit)   audit_system; exit 0 ;;
-    --fish-only) add_fish_alias; exit 0 ;;
+    --fish-only) add_fish_aliases; exit 0 ;;
     "") main_install ;;
     *) log_err "Unknown option: $1"; usage; exit 1 ;;
 esac
