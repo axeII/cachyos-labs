@@ -1,0 +1,14 @@
+# Firejail profile for quadcastrgb
+# USB RGB controller for HyperX Quadcast S
+include /etc/firejail/globals.local
+
+net none
+private-dev
+private-tmp
+nodvd
+novideo
+notv
+shell none
+whitelist /dev/bus/usb
+caps.drop all
+ipc-namespace

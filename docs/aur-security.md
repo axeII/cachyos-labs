@@ -33,25 +33,55 @@ The fix: **build all AUR packages in a chroot** using `paru` + `devtools`. In a 
 
 ## How It Works
 
+### Build-time vs Install-time (critical nuance)
+
+The chroot protects the **build** phase, but the **install script** (`.install`) runs on the host during `pacman -U`.
+
 ```
 Before (vulnerable):
   yay -S some-pkg
   → Downloads PKGBUILD from AUR
   → Runs makepkg ON YOUR HOST
-  → Malicious .install script runs npm install atomic-lockfile
+  → build()/package() can access /home, /etc/shadow, SSH keys  <-- DANGER
+  → .install script runs npm install atomic-lockfile
   → Infostealer executes, exfiltrates credentials  <-- DANGER
 
 After (protected):
-  paru -S some-pkg
+  paur -S some-pkg
   → Downloads PKGBUILD from AUR
-  → Shows diff for review
-  → Runs makepkg INSIDE CHROOT (clean Arch container)
-  → Malicious .install script runs inside chroot
-  → Can't escape the container  <-- SAFE
-  → Built package is installed from the chroot
+  → Copies PKGBUILD into chroot
+  → build()/package() runs INSIDE CHROOT
+    → /home/ales NOT accessible  ✓ CONTAINED
+    → /etc/shadow NOT readable   ✓ CONTAINED
+    → Network depends on chroot config
+  → Built package extracted from chroot to local repo
+  → pacman -U installs on HOST
+    → .install script runs on HOST  ⚠️ REMAINING ATTACK SURFACE
+    → Must rely on PKGBUILD diff review to catch malicious .install
 ```
 
-The chroot is created automatically on first use with `mkarchroot` (from `devtools`). It uses a minimal Arch Linux root that gets updated along with your system.
+### Test Results (verified June 2026)
+
+| Phase | Can write to /tmp/ | Can read /etc/shadow | Can access /home/ales | Verdict |
+|---|---|---|---|---|
+| **build() in chroot** | Chroot's own /tmp only ✓ | No ✓ | No ✓ | **CONTAINED** |
+| **package() in chroot** | Chroot's own /tmp only ✓ | No ✓ | No ✓ | **CONTAINED** |
+| **install script on host** | Yes ⚠️ | Yes ⚠️ | Yes ⚠️ | **HOST LEVEL** |
+
+**Key takeaway:** Chroot protects against build-time exfiltration (`build()`/`package()` functions stealing data). The `.install` script still runs on the host — always review PKGBUILD diffs before approving installation.
+
+The chroot is created automatically on first build with `mkarchroot` (from `devtools`). It uses a minimal Arch Linux root at `/var/lib/aurbuild/x86_64/`.
+
+---
+
+## Reproducing the Test
+
+```bash
+# From the labs repo root:
+./configs/aur-security/test-chroot-isolation.sh
+```
+
+This creates a fake malicious PKGBUILD, builds it with and without chroot, and compares the results. Requires `paru` + `devtools`. No actual malware is deployed.
 
 ---
 

@@ -1,0 +1,17 @@
+# Firejail profile for littlesnitch-bin
+# Network monitor/firewall - must allow networking
+include /etc/firejail/globals.local
+
+private-dev
+private-tmp
+nodvd
+novideo
+notv
+shell none
+read-only ${HOME}
+read-write ${HOME}/.config/littlesnitch
+read-write ${HOME}/.littlesnitch
+read-only /etc
+read-only /usr
+noblacklist ${HOME}/.config/littlesnitch
+noblacklist ${HOME}/.littlesnitch

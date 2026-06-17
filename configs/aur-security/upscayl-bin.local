@@ -1,0 +1,19 @@
+# Firejail profile for upscayl-bin
+# AI Image Upscaler - needs GPU + file read/write, no network
+include /etc/firejail/globals.local
+
+net none
+private-dev
+private-tmp
+nodvd
+novideo
+notv
+shell none
+whitelist /dev/dri
+whitelist /dev/shm
+whitelist ${HOME}/Pictures
+whitelist ${HOME}/Downloads
+read-write ${HOME}/.config/upscayl
+read-write ${HOME}/.upscayl
+caps.drop all
+ipc-namespace
