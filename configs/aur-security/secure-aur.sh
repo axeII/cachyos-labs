@@ -191,12 +191,14 @@ Devel
 Provides
 CombinedUpgrade
 UseAsk
+PgpFetch
+LocalRepo = aurbuild
 Chroot
 BatchInstall
 PARUCONF
 
     log_ok "paru config created: ~/.config/paru/paru.conf"
-    log_info "Key: Chroot (isolated builds), CleanAfter, CombinedUpgrade"
+    log_info "Key: LocalRepo + Chroot (isolated builds), PgpFetch, CleanAfter"
 }
 
 add_fish_alias() {
@@ -235,6 +237,64 @@ add_posix_aliases() {
     fi
 }
 
+setup_local_repo() {
+    log_info "Setting up local repo for AUR builds..."
+    if ! grep -q '^\[aurbuild\]' /etc/pacman.conf 2>/dev/null; then
+        sudo sed -i '/^# cachyos repos/i # Local repo for paru chroot builds\n[aurbuild]\nSigLevel = Optional TrustAll\nServer = file:///var/lib/aurbuild/repo\n' /etc/pacman.conf
+    fi
+    sudo mkdir -p /var/lib/aurbuild/repo
+    if [[ ! -f /var/lib/aurbuild/repo/aurbuild.db.tar.gz ]]; then
+        sudo sh -c 'cd /var/lib/aurbuild/repo && tar czf aurbuild.db.tar.gz -T /dev/null && ln -sf aurbuild.db.tar.gz aurbuild.db'
+    fi
+    sudo chown -R "$USER:$USER" /var/lib/aurbuild 2>/dev/null || true
+    sudo pacman -Sy --noconfirm 2>&1 | tail -1 || true
+    log_ok "Local repo 'aurbuild' configured"
+}
+
+install_firejail() {
+    log_info "Installing firejail sandbox..."
+    if ! command -v firejail &>/dev/null; then
+        sudo pacman -S --needed --noconfirm firejail
+    fi
+    log_ok "firejail installed"
+}
+
+setup_pacman_hook() {
+    log_info "Installing AUR malware check hook..."
+    sudo tee /usr/local/bin/aur-malware-check.sh > /dev/null << 'SCRIPT'
+#!/bin/bash
+set -euo pipefail
+MALWARE_LIST_URL="https://raw.githubusercontent.com/lenucksi/aur-malware-check/3010670b9cad0146cf6e58db28cd17779535d35f/package_list.txt"
+OFFICIAL_LIST_URL="https://md.archlinux.org/s/SxbqukK6IA/download"
+foreign_pkgs=$(pacman -Qqm 2>/dev/null || true)
+[[ -z "$foreign_pkgs" ]] && exit 0
+hits=$(comm -12 <(echo "$foreign_pkgs" | sort) <(curl -fsSL "$OFFICIAL_LIST_URL" 2>/dev/null | sort) 2>/dev/null || true)
+if [[ -z "$hits" ]]; then
+    hits=$(comm -12 <(echo "$foreign_pkgs" | sort) <(curl -fsSL "$MALWARE_LIST_URL" 2>/dev/null | sort) 2>/dev/null || true)
+fi
+if [[ -n "$hits" ]]; then
+    echo "WARNING: Installed AUR packages match known-compromised lists!"
+    echo "$hits"
+    exit 1
+fi
+SCRIPT
+    sudo chmod +x /usr/local/bin/aur-malware-check.sh
+
+    sudo tee /etc/pacman.d/hooks/aur-malware-check.hook > /dev/null << 'HOOK'
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = *
+[Action]
+Description = Checking AUR packages against known malware lists...
+When = PostTransaction
+Exec = /usr/local/bin/aur-malware-check.sh
+AbortOnFail
+HOOK
+    log_ok "Pacman hook installed"
+}
+
 main_install() {
     echo ""
     log_info "=== CachyOS AUR Security Setup ==="
@@ -245,13 +305,17 @@ main_install() {
 
     install_paru_chroot
     configure_paru
+    setup_local_repo
+    install_firejail
+    setup_pacman_hook
     add_fish_alias
     add_posix_aliases
 
     echo ""
     log_ok "Setup complete!"
-    log_info "Test: paru -Syu  (or just 'yay' which now aliases to paru)"
-    log_info "Skip chroot: paru --nochroot <package>"
+    log_info "System: pacman -Syu  (repos + Chaotic-AUR only, no AUR)"
+    log_info "AUR:   paur -S <package>  (uses chroot-isolated build)"
+    log_info "Skip chroot: paur --nochroot <package>"
     echo ""
 }
 

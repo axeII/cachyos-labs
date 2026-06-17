@@ -21,10 +21,13 @@ The fix: **build all AUR packages in a chroot** using `paru` + `devtools`. In a 
 
 | Layer | What It Does |
 |---|---|
-| **Chroot builds** (`paru --chroot`) | Every AUR build runs in a clean container. `.install` scripts and `npm install` can't escape. |
-| **Diff review** (`paru` default) | paru shows PKGBUILD diffs before building. You'd spot `npm install atomic-lockfile` immediately. |
-| **Chaotic-aur** (repo priority) | Chaotic-aur vets packages before publishing. When a package exists in both chaotic-aur and AUR, pacman prefers chaotic-aur. |
-| **No npm dependency** | The attack vector was `npm install atomic-lockfile` + `js-digest`. Avoid installing npm globally unless needed. |
+| **Chaotic-aur** (repo priority) | Chaotic-aur has trusted maintainer system + human review for untrusted PKGBUILD changes. Caught Atomic Arch in real-time. |
+| **AUR disabled by default** | `paru` aliased to `--repo` mode in fish config. Only `paur` can access AUR. |
+| **Chroot builds** (`paur`, via LocalRepo) | Every AUR build runs in a clean systemd-nspawn container. `.install` scripts and `npm install` can't access your home directory or running processes. |
+| **Firejail sandbox** | Remaining AUR packages (littlesnitch, quadcastrgb, upscayl) run in restricted namespaces with limited FS/network access. |
+| **Pacman hook** | Post-transaction hook cross-references installed AUR packages against official + community compromised-package lists. |
+| **Snapper snapshots** | Automatic Btrfs snapshots before every pacman transaction for instant rollback. |
+| **No npm on host** | The attack vector was `npm install atomic-lockfile` + `js-digest`. npm removed from host. |
 
 ---
 
