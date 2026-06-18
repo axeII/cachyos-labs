@@ -8,6 +8,18 @@ The format is: `YYYY-MM-DD — Brief description`
 
 ## 2026-06
 
+### 2026-06-18 — GPU: FH6 Profile Reverted to Stock (0mV)
+- **Changed** FH6 LACT profile from -55mV → **0mV (stock)** for maximum stability headroom
+- **Rationale**: A 4K RT testing session on the TV output produced new FH6 crashes. Investigation showed these were **vkd3d-proton driver bugs**, not undervolt instability:
+  - Crash 1: descriptor heap out-of-bounds in FH6's RT memory allocator (fix: `PROTON_VKD3D_HEAP=1`, vkd3d-proton PR #3033; Mesa-side `radv_force_64_byte_sampled_image` already in 26.1.2)
+  - Crash 2: compute shader watchdog timeout ~28 min in (reproduces at any voltage offset, including stock)
+- **Decision**: FH6 is the only crash-prone title in the library. On a 75Hz V-Sync display (CPU-bottlenecked at ~95 FPS overall, GPU capable of ~120), the ~60MHz clock advantage of -55mV over stock is invisible. Running FH6 at stock removes voltage from the crash variables at zero perceptible cost.
+- **Kept** Default profile at -30mV (proven efficiency win: -32W peak, +60MHz, 1°C cooler, stable across all other titles)
+- **Added** `docs/gpu-tuning.md`: "Ray Tracing on RDNA 4: Known Driver Bugs" section, Phase 5 evolution entry, updated dual-profile rationale
+- **Updated** `configs/gpu/lact-config.yaml`, `configs/gpu/setup-9070xt.sh` (defaults: -30mV / 0mV), `ACTIVE-vs-TEST.md`, `README.md`, `docs/gaming.md` FH6 section
+- **Moved** -55mV (FH6) to superseded in ACTIVE-vs-TEST — still a valid choice on high-refresh unlocked displays
+- **RT verdict**: Disable RT Reflections + RTGI in FH6; use SSR High + SSGI High + Car Reflection High instead
+
 ### 2026-06-12 — AUR Security: Chroot-Isolated Builds
 - **Migrated** from `yay` to `paru` with chroot builds for AUR package isolation
 - **Configured** `paru` with `Chroot`, `CombinedUpgrade`, `CleanAfter` in `~/.config/paru/paru.conf`

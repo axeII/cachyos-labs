@@ -195,8 +195,11 @@ The more reliable approach is to set the TV as primary before launching Steam Bi
 
 ### Forza Horizon 6
 
-- **Mesa 26.0.8**: Known issues; workaround or driver downgrade may be needed
-- See [CHANGELOG](../CHANGELOG.md) for details
+- **LACT profile**: Auto-switches to a stock-voltage (0mV) profile when `forzahorizon6.exe` runs — see [GPU Tuning](gpu-tuning.md) for the full case study and benchmark results.
+- **RT (Ray Tracing)**: **Disable both RT Reflections and RTGI.** FH6 RT on RDNA 4 hits two vkd3d-proton driver bugs (descriptor heap OOB + compute shader watchdog timeout) that crash the GPU regardless of voltage. Use the non-RT fallbacks instead: Screen Space Reflections High + Screen Space GI High + Car Reflection Quality High.
+- **Upscaling**: FSR 4 Native AA at 3840x1600 (via OptiScaler, configured through proton-cachyos-slr). At 4K TV output, use FSR 4 Quality or Balanced.
+- **V-Sync**: On (75Hz lock on ultrawide, 60Hz on TV). The system is CPU-bottlenecked at ~95 FPS overall (GPU capable of ~120), so V-Sync costs nothing.
+- **Mesa 26.0.8**: Historical issues resolved on 26.1.2+ (includes `radv_force_64_byte_sampled_image` FH6 fix).
 
 ---
 

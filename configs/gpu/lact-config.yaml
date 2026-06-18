@@ -47,7 +47,7 @@ profiles:
           zero_rpm: false
         power_cap: 317.0
         performance_level: auto
-        voltage_offset: -55
+        voltage_offset: 0
     rule:
       type: process
       filter:

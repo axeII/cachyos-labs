@@ -4,17 +4,19 @@
 
 ## Overview
 
-The ASUS Prime RX 9070 XT (Navi 48, RDNA 4) uses **dual LACT profiles** — a conservative daily driver and a more aggressive game-specific profile for Forza Horizon 6 — with automatic switching via process detection.
+The ASUS Prime RX 9070 XT (Navi 48, RDNA 4) uses **dual LACT profiles** — an efficient daily driver for everything and a stock-voltage profile for the crash-prone Forza Horizon 6 — with automatic switching via process detection.
 
 ### Current Configuration
 
 | Parameter | Default Profile | FH6 Profile |
 |-----------|----------------|-------------|
-| **Undervolt** | -30mV | -55mV |
+| **Undervolt** | -30mV | 0mV (stock) |
 | **Power Cap** | 317W (VBIOS default) | 317W (VBIOS default) |
 | **Min Fan** | 30% | 30% |
 | **Zero RPM** | Disabled | Disabled |
 | **Trigger** | Default (always active) | `forzahorizon6.exe` process detected |
+
+> **Why stock for FH6?** FH6 was the only title that ever crashed (originally at -70mV). Later 4K testing with Ray Tracing revealed the RT crashes were **vkd3d-proton driver bugs** (descriptor heap OOB + compute shader watchdog timeout), not voltage-related — they hit at any offset. Even so, FH6 is the crash-prone title in this library, so it now runs at full stock for maximum stability headroom. On a 75Hz V-Sync display, the ~60MHz clock difference between -55mV and stock is invisible (GPU FPS ~120 either way, capped by both the CPU bottleneck ~95 and the 75Hz lock). The efficiency win from -30mV is kept for every other game where it's a proven free win.
 
 ---
 
@@ -64,9 +66,9 @@ power_cap: 317.0
 performance_level: auto
 ```
 
-### Forza Horizon 6 Profile (-55mV)
+### Forza Horizon 6 Profile (0mV / Stock)
 
-More aggressive — maximum GPU boost clocks (~3325MHz avg) and highest GPU FPS (120.4). Automatically activates when `forzahorizon6.exe` is running via process rule:
+Runs the GPU at full stock voltage — no undervolt — for maximum stability headroom. Automatically activates when `forzahorizon6.exe` is running via process rule:
 
 ```yaml
 profiles:
@@ -76,6 +78,8 @@ profiles:
       filter:
         name: forzahorizon6.exe
 ```
+
+FH6 is the only title in this library that has ever crashed (originally at -70mV). Although later investigation showed the 4K RT crashes were driver bugs rather than voltage instability (see [RT section](#ray-tracing-on-rdna-4-known-driver-bugs)), running FH6 at stock costs nothing visible at 75Hz V-Sync and removes voltage from the list of crash variables.
 
 ### Installation
 
@@ -109,7 +113,7 @@ Temporary aggressive undervolt. Caused a full GPU reset in Forza Horizon 6 after
 
 Settled on -45mV after earlier testing. Good balance of stability and performance. Was the active profile before the June 2026 FH6 deep-dive.
 
-### Phase 4: -30mV Default + -55mV FH6 (Current)
+### Phase 4: -30mV Default + -55mV FH6 (Superseded)
 
 After systematic benchmark testing, split into two profiles:
 
@@ -117,6 +121,16 @@ After systematic benchmark testing, split into two profiles:
 |---------|-----|
 | **-30mV** | Best **efficiency** — lowest peak power (252W), good clock gain (+60MHz), stable frametimes, best 1% lows in most games |
 | **-55mV** | Best **performance** for FH6 — highest GPU FPS (120.4), highest avg clocks (~3325MHz), still 15mV above the known crash point |
+
+This was the active setup from June through August 2026.
+
+### Phase 5: -30mV Default + 0mV FH6 (Current)
+
+A follow-up 4K RT testing session on the TV output produced new crashes in FH6. Investigation revealed these were **vkd3d-proton driver bugs** (descriptor heap out-of-bounds + compute shader watchdog timeout on RDNA 4), not undervolt instability — they reproduced at any voltage offset, including stock. See [Ray Tracing on RDNA 4](#ray-tracing-on-rdna-4-known-driver-bugs).
+
+That finding prompted a rethink of the FH6 profile. Since FH6 is the only crash-prone title in the library and the system runs on a 75Hz V-Sync display (CPU-bottlenecked at ~95 FPS overall, GPU capable of ~120), the ~60MHz clock advantage of -55mV over stock is **invisible**. Running FH6 at stock removes voltage from the crash variables at zero perceptible cost.
+
+The Default profile stays at **-30mV** — the efficiency win (−32W peak, +60MHz, 1°C cooler) is real and proven stable across every other title.
 
 ---
 
@@ -149,15 +163,18 @@ Four back-to-back FH6 built-in benchmarks at 3840x1600, Ultra preset (no FSR), V
 
 1. **CPU bottleneck**: Overall FPS (~95) is capped by the Ryzen 5 5600. GPU FPS reaches ~120, meaning the GPU has ~25% headroom the CPU can't feed.
 2. **-30mV is the efficiency sweet spot**: Peak power drops from 284W to **252W** (-11%) with a clock gain of +60MHz.
-3. **-55mV is the FH6 performance pick**: Highest GPU FPS (120.4), highest clocks (~3325MHz), best 1% low (97.3).
+3. **-55mV is the performance pick** (highest GPU FPS 120.4, highest clocks ~3325MHz, best 1% low 97.3) — a valid choice on high-refresh unlocked displays.
 4. **Power cap matters**: Removing the manual 262W cap (using VBIOS default 317W) improved stability at aggressive undervolts.
 5. **All tests passed**: No crashes during any of the 4 benchmark runs. The -55mV profile is 15mV above the known -70mV crash point.
+6. **Stock for FH6 is a pragmatic choice**: On a 75Hz V-Sync display, the clock/FPS difference between -55mV and stock is invisible, and FH6 is the only crash-prone title — so stock removes voltage from the crash variables for free.
 
 ### Why Dual Profiles?
 
-- **-30mV** is ideal for most games — same FPS, lower power, lower temps, quieter fans.
-- **-55mV** pushes FH6 to its peak — the GPU extracts every last MHz for the best 1% lows.
-- **Auto-switch via LACT** means zero manual intervention: launch FH6, get the aggressive profile; quit FH6, back to the efficient one.
+- **-30mV** is ideal for most games — same FPS, lower power, lower temps, quieter fans. A proven free win.
+- **0mV (stock)** for FH6 — the one crash-prone title gets full voltage headroom. At 75Hz V-Sync the performance difference vs -55mV is invisible.
+- **Auto-switch via LACT** means zero manual intervention: launch FH6, get the stable stock profile; quit FH6, back to the efficient one.
+
+> **Note on the -55mV FH6 history:** Earlier testing showed -55mV was stable in FH6's built-in benchmark and delivered the highest GPU FPS (120.4). It was retired in favor of stock not because it was unstable, but because (a) later 4K RT crashes turned out to be driver bugs unrelated to voltage, and (b) on a 75Hz V-Sync display the extra clocks buy nothing visible. If you're on a high-refresh unlocked display where every FPS counts, -55mV for FH6 remains a valid choice — see the benchmark table above.
 
 ### Reproducing the Tests
 
@@ -175,6 +192,35 @@ lact cli profile switch <profile-name>
 # Check the CSV for: gpuUsage, gpuFreq, gpuPower, gpuTemp
 # Compare overall FPS vs GPU FPS to identify CPU bottlenecks
 ```
+
+---
+
+## Ray Tracing on RDNA 4: Known Driver Bugs
+
+A follow-up 4K RT testing session on the TV output (3840x2160) produced new FH6 crashes that looked like undervolt instability but were not. This section documents them so the undervolt isn't blamed for a driver problem.
+
+### Crash 1: Descriptor heap out-of-bounds
+
+RT Reflections at 4K crashed within minutes. The root cause is a buggy RT memory allocator in FH6 that writes past the end of a descriptor heap buffer. On NVIDIA this works by luck (larger pages); on RDNA 4 it hits unmapped memory and kills the amdgpu driver.
+
+- **Fix (vkd3d-proton side):** `PROTON_VKD3D_HEAP=1` in Steam launch options enables the descriptor heap workaround (vkd3d-proton PR #3033). Not enabled by default in proton-cachyos-slr.
+- **Fix (Mesa side):** `radv_force_64_byte_sampled_image` and `radv_wait_for_vm_map_updates` — already baked into Mesa 26.1.2+ automatically.
+
+### Crash 2: Compute shader watchdog timeout
+
+With the heap workaround applied, RT Reflections Low at 4K ran for ~28 minutes then crashed with `DXI_ERROR_DEVICE_REMOVED` (`ACCESS_VIOLATION_WRITE`). FH6's RT compute shaders run too long on RDNA 4 and trip the GPU watchdog timeout. This reproduces at **any** voltage offset, including stock — it is not undervolt-related.
+
+### Verdict
+
+RT in FH6 on RDNA 4 is not stable enough as of Mesa 26.1.2 / vkd3d-proton 11.0.20260601. Disable both **RT Reflections** and **RTGI** in-game and use the non-RT fallbacks instead:
+
+| Setting (RT off) | Value | Replaces |
+|------------------|-------|----------|
+| Screen Space Reflections | High | RT Reflections |
+| Screen Space GI | High | RTGI |
+| Car Reflection Quality | High | (Extreme is bugged per Digital Foundry) |
+
+You get the same visual benefit at a fraction of the cost and zero crash risk. The undervolt settings are not the cause and do not need to be changed for RT crashes.
 
 ---
 
@@ -250,10 +296,11 @@ When migrating from RX 6800 (RDNA2) to RX 9070 XT (RDNA4):
 3. Verify power cap is set correctly (317W VBIOS default recommended)
 
 ### Game-Specific Crashes (like FH6)
-1. **Different games have different voltage stability thresholds** — FH6 is particularly sensitive to undervolt instability due to sustained GPU load
-2. Create a separate LACT profile with a milder undervolt
-3. Set up auto-switch via process detection so the game uses its own profile
-4. Run the game's built-in benchmark (if available) to test quickly
+1. **Different games have different voltage stability thresholds** — FH6 is particularly sensitive to undervolt instability due to sustained GPU load.
+2. Create a separate LACT profile with a milder undervolt (or stock) for the crash-prone title.
+3. Set up auto-switch via process detection so the game uses its own profile.
+4. Run the game's built-in benchmark (if available) to test quickly.
+5. **Rule out driver bugs before blaming the undervolt.** FH6 RT crashes on RDNA 4 are vkd3d-proton/Mesa issues (see [Ray Tracing on RDNA 4](#ray-tracing-on-rdna-4-known-driver-bugs)) that reproduce at stock voltage — don't sacrifice your efficiency undervolt chasing a fix for a driver problem.
 
 ### High temperatures under load
 1. Check fan curve is active (not zero RPM)
@@ -274,7 +321,7 @@ chmod +x setup-9070xt.sh
 
 The script will:
 1. Detect your RX 9070 XT
-2. Ask for voltage offsets (or use defaults: -30mV / -55mV)
+2. Ask for voltage offsets (or use defaults: -30mV default / 0mV FH6)
 3. Generate the LACT config
 4. Backup existing config
 5. Apply and restart LACT

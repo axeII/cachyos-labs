@@ -82,7 +82,7 @@ Share the interactive setup script:
 curl -sS https://raw.githubusercontent.com/<your-username>/cachyos-labs/main/configs/gpu/setup-9070xt.sh | bash
 ```
 
-This configures LACT with dual profiles (efficient daily + aggressive Forza Horizon 6) with auto-switching.
+This configures LACT with dual profiles (efficient daily -30mV + stock-voltage Forza Horizon 6 for stability) with auto-switching.
 
 ### 5. Backup first!
 
@@ -98,7 +98,7 @@ See [ACTIVE-vs-TEST.md](ACTIVE-vs-TEST.md) for a full breakdown.
 
 - Auto game-mode profile switcher (tuned daemon)
 - Display reset on KDE login
-- LACT GPU undervolting (dual profile: -30mV default, -55mV FH6 auto-switch) + custom fan curve
+- LACT GPU undervolting (dual profile: -30mV default, 0mV stock for FH6 auto-switch) + custom fan curve
 - MangoHud overlay (FPS, frametime, throttling)
 - Proton GE for Steam
 - MESA shader cache 12GB

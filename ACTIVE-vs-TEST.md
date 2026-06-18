@@ -28,7 +28,7 @@ These configs and scripts are running right now and are considered stable.
 | LACT systemd override (after CoolerControl) | Active | `/etc/systemd/system/lactd.service.d/override.conf` |
 | Custom fan curve (30% min) | Active | LACT config (both profiles) |
 | Default profile -30mV, 317W cap | Active | LACT config |
-| FH6 profile -55mV, 317W cap (auto-switch) | Active | LACT config |
+| FH6 profile 0mV (stock), 317W cap (auto-switch) | Active | LACT config |
 | Zero RPM disabled | Active | LACT config |
 | Setup script for friends | Available | `configs/gpu/setup-9070xt.sh` |
 
@@ -73,7 +73,8 @@ These were tried, tested, or temporarily used but are NOT currently active.
 |------|--------|-------|
 | Undervolt -60mV | Deprecated | Too aggressive, limited boost clocks at 3840x1600 |
 | Undervolt -70mV | Deprecated | Caused GPU reset / crash in Forza Horizon 6 |
-| Undervolt -45mV | Superseded | Previous daily driver; replaced by dual-profile (-30mV + -55mV FH6) |
+| Undervolt -45mV | Superseded | Previous daily driver; replaced by -30mV Default |
+| Undervolt -55mV (FH6) | Superseded | Was the FH6 profile; replaced by stock (0mV) after 4K RT crashes turned out to be driver bugs, not voltage. Still a valid choice on high-refresh unlocked displays |
 | 258W power cap | Deprecated | Too restrictive, limited boost; bumped to VBIOS default 317W |
 | 262W / 270W power caps | Deprecated | Manual caps removed; 317W VBIOS default is stable with proper undervolt |
 | CoolerControl GPU management | Deprecated | Conflicts with LACT; set to "Unmanaged" |
@@ -120,7 +121,7 @@ These were tried, tested, or temporarily used but are NOT currently active.
 
 - **Why not Anti-Lag?** At 3840x1600 (near-4K ultrawide), the RX 9070 XT is heavily GPU-bound in single-player games. Anti-Lag only reduces input lag when the CPU runs ahead of the GPU (competitive, high-FPS scenarios). For this setup, `PROTON_FSR4_UPGRADE=1` and `game-performance %command%` are far more impactful.
 
-- **Why dual profiles (-30mV / -55mV)?** After systematic FH6 benchmarking, -30mV was identified as the efficiency sweet spot (252W peak vs 284W stock, -11% power, +60MHz clocks). However, -55mV delivers the peak GPU FPS (120.4) and best 1% lows in FH6. The dual-profile setup with LACT auto-switch gives the best of both worlds: efficiency everywhere, peak performance in FH6. The -70mV used earlier caused a full GPU reset in FH6 after sustained load.
+- **Why dual profiles (-30mV / 0mV stock for FH6)?** After systematic FH6 benchmarking, -30mV was identified as the efficiency sweet spot (252W peak vs 284W stock, -11% power, +60MHz clocks) and is the active Default. FH6 was the only title that ever crashed (originally at -70mV). A later 4K RT test session produced new FH6 crashes that looked voltage-related but were actually **vkd3d-proton driver bugs** (descriptor heap OOB + compute shader watchdog timeout on RDNA 4) — they reproduce at stock voltage. Even so, FH6 runs at stock (0mV) for maximum stability headroom: on a 75Hz V-Sync display, CPU-bottlenecked at ~95 FPS overall, the ~60MHz clock difference between -55mV and stock is invisible. The -55mV FH6 setting (highest GPU FPS 120.4) remains a valid choice on high-refresh unlocked displays where every FPS counts — see `docs/gpu-tuning.md` for the full benchmark table.
 
 - **Why 317W power cap?** Previous testing used manual caps (258W-270W) but the VBIOS default 317W provides the thermal headroom needed for aggressive undervolts to express their boost potential. The card draws 252-315W depending on the undervolt, and removing the cap improves stability.
 

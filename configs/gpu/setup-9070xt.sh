@@ -1,12 +1,12 @@
 #!/bin/bash
 # RX 9070 XT LACT Profile Setup
 # Configures LACT with dual profiles:
-#   - Default: stable daily-driver undervolt
-#   - Forza Horizon 6: more aggressive undervolt (auto-switches via process detection)
+#   - Default: efficient daily-driver undervolt (-30mV)
+#   - Forza Horizon 6: stock voltage (0mV) for maximum stability (auto-switches)
 #
 # Usage:
 #   ./setup-9070xt.sh                    # Interactive mode
-#   ./setup-9070xt.sh --default -30 --fh6 -55 --apply  # Non-interactive
+#   ./setup-9070xt.sh --default -30 --fh6 0 --apply  # Non-interactive
 #
 # Run with --help for all options.
 
@@ -28,7 +28,7 @@ header() { echo -e "\n${CYAN}=== $1 ===${NC}\n"; }
 
 # --- Defaults ---
 DEFAULT_VOLTAGE=-30
-FH6_VOLTAGE=-55
+FH6_VOLTAGE=0
 POWER_CAP=317
 ZERO_RPM=false
 MIN_FAN=0.3
@@ -45,7 +45,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --default <mV>    Default profile voltage offset (default: -30)"
-            echo "  --fh6 <mV>        FH6 profile voltage offset (default: -55)"
+            echo "  --fh6 <mV>        FH6 profile voltage offset (default: 0 = stock)"
             echo "  --power-cap <W>   Power cap in watts (default: 317)"
             echo "  --apply           Non-interactive: apply with current args"
             echo "  --help            Show this help"
@@ -120,10 +120,11 @@ header "Voltage Configuration"
 
 if [[ -z "$NONINTERACTIVE" ]]; then
     echo "Recommended starting points for RX 9070 XT:"
-    echo "  -30mV: Safe daily driver, good efficiency + boost gain"
+    echo "  -30mV: Safe daily driver, good efficiency + boost gain (recommended Default)"
     echo "  -45mV: Aggressive, test stability thoroughly"
     echo "  -55mV: Very aggressive, may crash in some games"
     echo "  -70mV: Maximum tested on this card, crashes FH6"
+    echo "    0mV: Stock voltage, maximum stability (recommended for FH6)"
     echo ""
     read -rp "Default profile voltage offset (mV) [-30]: " INPUT
     DEFAULT_VOLTAGE="${INPUT:--30}"
@@ -131,9 +132,10 @@ if [[ -z "$NONINTERACTIVE" ]]; then
     [[ "$DEFAULT_VOLTAGE" != -* ]] && DEFAULT_VOLTAGE="-${DEFAULT_VOLTAGE#+}"
     echo ""
 
-    read -rp "Forza Horizon 6 profile voltage offset (mV) [-55]: " INPUT
-    FH6_VOLTAGE="${INPUT:--55}"
-    [[ "$FH6_VOLTAGE" != -* ]] && FH6_VOLTAGE="-${FH6_VOLTAGE#+}"
+    read -rp "Forza Horizon 6 profile voltage offset (mV) [0]: " INPUT
+    FH6_VOLTAGE="${INPUT:-0}"
+    # Allow 0 as-is; make positive values negative only if non-zero
+    [[ "$FH6_VOLTAGE" != -* && "$FH6_VOLTAGE" != 0* ]] && FH6_VOLTAGE="-${FH6_VOLTAGE#+}"
     echo ""
 
     read -rp "Power cap in watts (VBIOS default is 317) [317]: " INPUT
